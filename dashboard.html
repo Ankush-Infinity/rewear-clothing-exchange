@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -268,6 +269,12 @@
             font-size: 80px;
             background: linear-gradient(45deg, #f8f9fa, #e9ecef);
             overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .product-info {
@@ -603,6 +610,40 @@
             font-size: 14px;
         }
 
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .main-layout {
@@ -691,36 +732,18 @@
         .notification.info {
             background: #17a2b8;
         }
+
+        .sort-select {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
     </style>
 </head>
 <body>
- <!-- PRODUCT MODAL -->
-<div id="productModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
-  <div style="background:white; padding:30px; border-radius:15px; max-width:600px; width:90%; position:relative; max-height:90vh; overflow-y:auto;">
-    <span onclick="closeModal()" style="position:absolute;top:10px;right:20px;font-size:24px;cursor:pointer;">×</span>
-
-    <img id="modalImage" src="" style="width:100%; border-radius:10px; margin-bottom:15px;" />
-    <h2 id="modalTitle" style="margin-bottom:10px;"></h2>
-    <p id="modalDescription" style="margin-bottom:15px;"></p>
-    <p style="margin-bottom:10px;"><strong>Price:</strong> $<span id="modalPrice"></span></p>
-
-    <div id="modalComments" style="margin-top:20px; margin-bottom:20px;"></div>
-
-    <form id="commentForm" style="margin-top:10px;">
-      <textarea id="commentText" placeholder="Write your comment..." required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; resize:vertical;"></textarea>
-      <select id="commentRating" required style="margin-top:10px; width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
-        <option value="">Give a rating</option>
-        <option value="1">⭐☆☆☆☆</option>
-        <option value="2">⭐⭐☆☆☆</option>
-        <option value="3">⭐⭐⭐☆☆</option>
-        <option value="4">⭐⭐⭐⭐☆</option>
-        <option value="5">⭐⭐⭐⭐⭐</option>
-      </select>
-      <button type="submit" style="margin-top:15px; padding:10px 20px; background:#667eea; color:white; border:none; border-radius:8px; cursor:pointer;">Submit Review</button>
-    </form>
-  </div>
-</div>
-
     <!-- User Info -->
     <div class="user-info">
         <span id="welcomeName">Welcome</span>
@@ -754,8 +777,10 @@
         <aside class="sidebar">
             <div class="sidebar-section">
                 <h3 class="sidebar-title">Categories</h3>
-                <div class="sidebar-item active" onclick="showSection('products')">📦 All Products</div>
-                <div class="sidebar-item" onclick="showSection('myProducts')">🧾 My Listings</div>
+                <div class="sidebar-item active" data-target="products" onclick="showSection('products')">📦 All Products</div>
+                <div class="sidebar-item" data-target="myProducts" onclick="showSection('myProducts')">🧾 My Listings</div>
+                <div class="sidebar-item" data-target="sell" onclick="showSection('sell')">💰 Sell Products</div>
+                <div class="sidebar-item" data-target="profile" onclick="showSection('profile')">👤 My Profile</div>
                 <div class="sidebar-item" onclick="filterProducts('clothing')">👕 Clothing</div>
                 <div class="sidebar-item" onclick="filterProducts('footwear')">👟 Footwear</div>
                 <div class="sidebar-item" onclick="filterProducts('accessories')">👜 Accessories</div>
@@ -767,6 +792,12 @@
             <!-- Products Section -->
             <section class="section active" id="products">
                 <h2 class="section-title">All Products</h2>
+                <select class="sort-select" id="sortSelect">
+                    <option value="featured">Featured</option>
+                    <option value="lowToHigh">Price: Low to High</option>
+                    <option value="highToLow">Price: High to Low</option>
+                    <option value="newest">Newest</option>
+                </select>
                 <div class="products-grid" id="productsGrid">
                     <div class="loading">
                         <div class="spinner"></div>
@@ -814,7 +845,6 @@
                             <label class="form-label">Product Image</label>
                             <input type="file" class="form-input" name="image" accept="image/*" required>
                         </div>
-
                         <button type="submit" class="form-submit">List Product</button>
                     </form>
                 </div>
@@ -873,46 +903,36 @@
         </div>
     </div>
 
+    <!-- Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <img id="modalImage" src="" style="width:100%; border-radius:10px; margin-bottom:15px;" />
+            <h2 id="modalTitle" style="margin-bottom:10px;"></h2>
+            <p id="modalDescription" style="margin-bottom:15px;"></p>
+            <p style="margin-bottom:10px;"><strong>Price:</strong> $<span id="modalPrice"></span></p>
+            <div id="modalComments" style="margin-top:20px; margin-bottom:20px;"></div>
+            <form id="commentForm" style="margin-top:10px;">
+                <textarea id="commentText" placeholder="Write your comment..." required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; resize:vertical;"></textarea>
+                <select id="commentRating" required style="margin-top:10px; width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                    <option value="">Give a rating</option>
+                    <option value="1">⭐☆☆☆☆</option>
+                    <option value="2">⭐⭐☆☆☆</option>
+                    <option value="3">⭐⭐⭐☆☆</option>
+                    <option value="4">⭐⭐⭐⭐☆</option>
+                    <option value="5">⭐⭐⭐⭐⭐</option>
+                </select>
+                <button type="submit" style="margin-top:15px; padding:10px 20px; background:#667eea; color:white; border:none; border-radius:8px; cursor:pointer;">Submit Review</button>
+            </form>
+        </div>
+    </div>
 
 <script type="module">
+// Firebase configuration and initialization
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
-
-
-
-document.getElementById("sellForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const form = e.target;
-    const name = form.name.value;
-    const price = parseFloat(form.price.value);
-    const category = form.category.value;
-    const description = form.description.value;
-    const imageFile = form.image.files[0];
-
-    if (!imageFile) return showNotification("Please select an image", "error");
-
-    const imageRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
-    await uploadBytes(imageRef, imageFile);
-    const imageURL = await getDownloadURL(imageRef);
-
-    await addDoc(collection(db, "products"), {
-        name, price, category, description,
-        imageURL,
-        uid: currentUser.uid,
-        sold: false,
-        createdAt: serverTimestamp()
-    });
-
-    form.reset();
-    showNotification("Product listed!", "success");
-    showSection("myProducts");
-});
-
-
-
-
 
 const firebaseConfig = {
     apiKey: "AIzaSyAAvWqYUqnxqOiz0cuGutrx9X3njCXUuhk",
@@ -929,24 +949,30 @@ const storage = getStorage(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Global variables
 let currentUser = null;
 let allProducts = [];
 let cart = [];
 let currentFilter = 'all';
 let currentSort = 'featured';
+let selectedProductIdForModal = null;
 
+// Authentication state change listener
 onAuthStateChanged(auth, user => {
-    if (!user) return window.location.href = "auth.html";
+    if (!user) {
+        window.location.href = "auth.html";
+        return;
+    }
     currentUser = user;
     initializeUser();
     loadProducts();
 });
 
+// Initialize user information
 function initializeUser() {
     const email = currentUser.email;
     let displayName = currentUser.displayName;
 
-    // If displayName is not set, use part of email
     if (!displayName || displayName.trim() === "") {
         displayName = email.split("@")[0];
     }
@@ -958,27 +984,34 @@ function initializeUser() {
     document.getElementById("profileAvatar").textContent = displayName.charAt(0).toUpperCase();
 }
 
-import { updateProfile } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-
+// Update user display name if not set
 async function updateUserDisplayName(name) {
-  if (auth.currentUser && !auth.currentUser.displayName) {
-    await updateProfile(auth.currentUser, { displayName: name });
-  }
+    if (auth.currentUser && !auth.currentUser.displayName) {
+        await updateProfile(auth.currentUser, { displayName: name });
+    }
 }
 
-
+// Logout functionality
 document.getElementById("logoutBtn").addEventListener("click", e => {
     e.preventDefault();
-    signOut(auth).then(() => window.location.href = "auth.html");
+    signOut(auth).then(() => {
+        window.location.href = "auth.html";
+    }).catch(error => {
+        console.error("Error signing out:", error);
+    });
 });
 
+// Show section functionality
 function showSection(sectionId) {
+    // Hide all sections
     const allSections = document.querySelectorAll(".section");
     allSections.forEach(section => section.classList.remove("active"));
 
+    // Show target section
     const target = document.getElementById(sectionId);
     if (target) target.classList.add("active");
 
+    // Update sidebar active state
     const sidebarMap = {
         products: 'All Products',
         myProducts: 'My Listings',
@@ -987,83 +1020,49 @@ function showSection(sectionId) {
     };
 
     document.querySelectorAll(".sidebar-item").forEach(item => {
+        item.classList.remove("active");
         if (item.textContent.includes(sidebarMap[sectionId])) {
             item.classList.add("active");
-        } else {
-            item.classList.remove("active");
         }
     });
 }
 
-
-
-function getSectionName(id) {
-    return {
-        products: 'All Products',
-        myProducts: 'My Listings',
-        sell: 'Sell',
-        profile: 'Account'
-    }[id] || '';
-}
-
+// Load products from Firestore
 function loadProducts() {
-    onSnapshot(query(collection(db, "products")), snap => {
-        allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const productsRef = collection(db, "products");
+    onSnapshot(productsRef, (snapshot) => {
+        allProducts = snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+        }));
         renderProducts();
         renderMyProducts();
         updateProfileStats();
+    }, (error) => {
+        console.error("Error loading products:", error);
+        showNotification("Error loading products", "error");
     });
 }
 
+// Apply sorting to products
 function applySorting(products) {
     switch (currentSort) {
-        case 'lowToHigh': return products.sort((a, b) => a.price - b.price);
-        case 'highToLow': return products.sort((a, b) => b.price - a.price);
-        case 'newest': return products.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
-        default: return products;
+        case 'lowToHigh': 
+            return products.sort((a, b) => a.price - b.price);
+        case 'highToLow': 
+            return products.sort((a, b) => b.price - a.price);
+        case 'newest': 
+            return products.sort((a, b) => {
+                const timeA = a.createdAt?.seconds || 0;
+                const timeB = b.createdAt?.seconds || 0;
+                return timeB - timeA;
+            });
+        default: 
+            return products;
     }
 }
 
-document.getElementById("sellForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const form = e.target;
-    const name = form.name.value;
-    const price = parseFloat(form.price.value);
-    const category = form.category.value;
-    const description = form.description.value;
-    const imageFile = form.image.files[0];
-
-    if (!imageFile) {
-        showNotification("Please select an image", "error");
-        return;
-    }
-
-    try {
-        const imageRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(imageRef, imageFile);
-        const imageURL = await getDownloadURL(imageRef);
-
-        await addDoc(collection(db, "products"), {
-            name,
-            price,
-            category,
-            description,
-            imageURL,
-            uid: currentUser.uid,
-            sold: false,
-            createdAt: serverTimestamp()
-        });
-
-        form.reset();
-        showNotification("Product listed successfully!", "success");
-        showSection("myProducts");
-    } catch (err) {
-        console.error("Error listing product:", err);
-        showNotification("Failed to list product.", "error");
-    }
-});
-
-
+// Render all products
 function renderProducts() {
     const grid = document.getElementById("productsGrid");
     const products = allProducts.filter(p =>
@@ -1074,56 +1073,115 @@ function renderProducts() {
 
     const sorted = applySorting([...products]);
 
-    grid.innerHTML = sorted.length ? sorted.map(p => `
-        <div class="product-card">
-            <div class="product-image">${getProductIcon(p.category)}</div>
+    if (sorted.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <div class="empty-state-title">No products found</div>
+                <div class="empty-state-text">Try another filter or check back later.</div>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = sorted.map(p => `
+        <div class="product-card" onclick="showProductModal(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+            <div class="product-image">
+                ${p.imageURL ? `<img src="${p.imageURL}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">` : getProductIcon(p.category)}
+            </div>
             <div class="product-info">
                 <h3 class="product-title">${p.name}</h3>
                 <p class="product-price">$${p.price.toFixed(2)}</p>
                 <div class="product-actions">
-                    <button class="action-btn btn-cart" onclick="addToCart('${p.id}')">Add to Cart</button>
+                    <button class="action-btn btn-cart" onclick="event.stopPropagation(); addToCart('${p.id}')">Add to Cart</button>
                 </div>
             </div>
         </div>
-    `).join("") : `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-title">No products found</div><div class="empty-state-text">Try another filter or check back later.</div></div>`;
+    `).join("");
 }
 
+// Render user's products
 function renderMyProducts() {
     const grid = document.getElementById("myProductsGrid");
-    const mine = allProducts.filter(p => p.uid === currentUser.uid);
+    const myProducts = allProducts.filter(p => p.uid === currentUser.uid);
 
-    grid.innerHTML = mine.length ? mine.map(p => `
+    if (myProducts.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <div class="empty-state-title">No listings yet</div>
+                <div class="empty-state-text">Sell something to get started!</div>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = myProducts.map(p => `
         <div class="product-card">
-            <div class="product-image">${getProductIcon(p.category)}</div>
+            <div class="product-image">
+                ${p.imageURL ? `<img src="${p.imageURL}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">` : getProductIcon(p.category)}
+            </div>
             <div class="product-info">
-                <h3 class="product-title">${p.name}</h3>
+                <h3 class="product-title">${p.name} ${p.sold ? '(SOLD)' : ''}</h3>
                 <p class="product-price">$${p.price.toFixed(2)}</p>
                 <div class="product-actions">
-                    <button class="action-btn btn-edit" onclick="markAsSold('${p.id}')">Mark as Sold</button>
+                    ${!p.sold ? `<button class="action-btn btn-edit" onclick="markAsSold('${p.id}')">Mark as Sold</button>` : ''}
                     <button class="action-btn btn-delete" onclick="deleteProduct('${p.id}')">Delete</button>
                 </div>
             </div>
         </div>
-    `).join("") : `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-title">No listings yet</div><div class="empty-state-text">Sell something to get started!</div></div>`;
+    `).join("");
 }
 
-function getProductIcon(c) {
-    return c === "clothing" ? "👕" : c === "footwear" ? "👟" : c === "accessories" ? "👜" : "📦";
+// Get product icon based on category
+function getProductIcon(category) {
+    switch(category) {
+        case "clothing": return "👕";
+        case "footwear": return "👟";
+        case "accessories": return "👜";
+        default: return "📦";
+    }
 }
 
-window.addToCart = (id) => {
-    const item = allProducts.find(p => p.id === id);
-    if (!cart.find(p => p.id === id)) cart.push(item);
+// Add product to cart
+function addToCart(productId) {
+    const product = allProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    const existingItem = cart.find(p => p.id === productId);
+    if (existingItem) {
+        showNotification("Item already in cart", "info");
+        return;
+    }
+
+    cart.push(product);
     updateCart();
     showNotification("Added to cart", "success");
-};
+}
 
+// Remove product from cart
+function removeFromCart(productId) {
+    cart = cart.filter(p => p.id !== productId);
+    updateCart();
+    showNotification("Removed from cart", "info");
+}
+
+// Update cart display
 function updateCart() {
     const container = document.getElementById("cartItems");
-    if (!cart.length) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🛒</div><div class="empty-state-title">Your cart is empty</div><div class="empty-state-text">Add products to proceed</div></div>`;
-        document.getElementById("cartCount").textContent = "0";
-        document.getElementById("cartTotal").textContent = "0.00";
+    const countElement = document.getElementById("cartCount");
+    const totalElement = document.getElementById("cartTotal");
+
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🛒</div>
+                <div class="empty-state-title">Your cart is empty</div>
+                <div class="empty-state-text">Add products to proceed</div>
+            </div>
+        `;
+        countElement.textContent = "0";
+        totalElement.textContent = "0.00";
         return;
     }
 
@@ -1138,164 +1196,267 @@ function updateCart() {
         </div>
     `).join("");
 
-    document.getElementById("cartCount").textContent = cart.length;
-    document.getElementById("cartTotal").textContent = cart.reduce((s, p) => s + Number(p.price), 0).toFixed(2);
+    countElement.textContent = cart.length.toString();
+    const total = cart.reduce((sum, p) => sum + parseFloat(p.price), 0);
+    totalElement.textContent = total.toFixed(2);
 }
 
-window.removeFromCart = (id) => {
-    cart = cart.filter(p => p.id !== id);
-    updateCart();
-};
-
-window.toggleCart = () => document.getElementById("cartPanel").classList.toggle("open");
-
-window.checkout = () => {
-    if (!cart.length) return;
-    cart = [];
-    updateCart();
-    showNotification("Checked out!", "success");
-    toggleCart();
-};
-
-window.deleteProduct = async (id) => {
-    if (!confirm("Delete this product?")) return;
-    await deleteDoc(doc(db, "products", id));
-    showNotification("Deleted", "error");
-};
-
-window.markAsSold = async (id) => {
-    await updateDoc(doc(db, "products", id), { sold: true });
-    showNotification("Marked as sold", "info");
-};
-
-function showNotification(msg, type) {
-    const el = document.createElement("div");
-    el.className = `notification ${type} show`;
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => {
-        el.classList.remove("show");
-        setTimeout(() => el.remove(), 300);
-    }, 2500);
+// Toggle cart panel
+function toggleCart() {
+    const cartPanel = document.getElementById("cartPanel");
+    cartPanel.classList.toggle("open");
 }
 
-document.getElementById("sellForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const name = e.target.name.value;
-    const price = parseFloat(e.target.price.value);
-    const category = e.target.category.value;
-    const description = e.target.description.value;
-    await addDoc(collection(db, "products"), {
-        name, price, category, description,
-        uid: currentUser.uid,
-        sold: false,
-        createdAt: serverTimestamp()
-    });
-    e.target.reset();
-    showNotification("Product listed!", "success");
-    showSection("myProducts");
-});
-
-window.filterProducts = (category) => {
-    currentFilter = category;
-    currentSort = 'featured';
-    showSection("products");
-    renderProducts();
-};
-
-document.getElementById("searchInput").addEventListener("input", (e) => {
-    // optionally implement real-time search
-});
-
-const sortSelect = document.createElement("select");
-sortSelect.innerHTML = `
-    <option value="featured">Featured</option>
-    <option value="lowToHigh">Price: Low to High</option>
-    <option value="highToLow">Price: High to Low</option>
-    <option value="newest">Newest</option>
-`;
-sortSelect.style.marginBottom = "20px";
-sortSelect.onchange = () => {
-    currentSort = sortSelect.value;
-    renderProducts();
-};
-document.getElementById("productsGrid").before(sortSelect);
-
-function updateProfileStats() {
-    const mine = allProducts.filter(p => p.uid === currentUser.uid);
-    const sold = mine.filter(p => p.sold).length;
-    const total = mine.length;
-    const earnings = mine.filter(p => p.sold).reduce((s, p) => s + Number(p.price), 0);
-    document.getElementById("totalListings").textContent = total;
-    document.getElementById("soldItems").textContent = sold;
-    document.getElementById("totalEarnings").textContent = "$" + earnings.toFixed(2);
-}
-
-let selectedProductIdForModal = null;
-
-window.showProductModal = function(p) {
-    selectedProductIdForModal = p.id;
-    document.getElementById("modalTitle").textContent = p.name;
-    document.getElementById("modalDescription").textContent = p.description;
-    document.getElementById("modalPrice").textContent = p.price.toFixed(2);
-    document.getElementById("modalImage").src = p.imageURL;
-    document.getElementById("productModal").style.display = "flex";
-    loadComments(p.id);
-};
-
-window.closeModal = function() {
-    document.getElementById("productModal").style.display = "none";
-    document.getElementById("modalComments").innerHTML = "";
-};
-
-async function loadComments(productId) {
-    const ref = collection(db, "products", productId, "comments");
-    const snap = await getDocs(query(ref, orderBy("createdAt", "desc")));
-    const container = document.getElementById("modalComments");
-
-    if (snap.empty) {
-        container.innerHTML = `<p>No reviews yet.</p>`;
+// Checkout functionality
+function checkout() {
+    if (cart.length === 0) {
+        showNotification("Cart is empty", "error");
         return;
     }
 
-    container.innerHTML = "<h3 style='margin-bottom:10px;'>Reviews:</h3>" + snap.docs.map(doc => {
-        const d = doc.data();
-        return `
-            <div style="border-bottom:1px solid #eee; padding:10px 0;">
-                <strong>${d.name}</strong> • ${"⭐".repeat(d.rating)}${"☆".repeat(5 - d.rating)}
-                <p>${d.text}</p>
-            </div>
-        `;
-    }).join("");
+    // In a real app, you'd process payment here
+    const total = cart.reduce((sum, p) => sum + parseFloat(p.price), 0);
+    cart = [];
+    updateCart();
+    showNotification(`Checkout successful! Total: $${total.toFixed(2)}`, "success");
+    toggleCart();
 }
 
+// Delete product
+async function deleteProduct(productId) {
+    if (!confirm("Are you sure you want to delete this product?")) return;
 
-document.getElementById("commentForm").addEventListener("submit", async e => {
+    try {
+        await deleteDoc(doc(db, "products", productId));
+        showNotification("Product deleted", "success");
+    } catch (error) {
+        console.error("Error deleting product:", error);
+        showNotification("Error deleting product", "error");
+    }
+}
+
+// Mark product as sold
+async function markAsSold(productId) {
+    try {
+        await updateDoc(doc(db, "products", productId), { sold: true });
+        showNotification("Product marked as sold", "success");
+    } catch (error) {
+        console.error("Error marking as sold:", error);
+        showNotification("Error updating product", "error");
+    }
+}
+
+// Filter products by category
+function filterProducts(category) {
+    currentFilter = category;
+    showSection('products');
+    renderProducts();
+}
+
+// Show notification
+function showNotification(message, type) {
+    const notification = document.createElement("div");
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add("show"), 100);
+    
+    setTimeout(() => {
+        notification.classList.remove("show");
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Handle sell form submission
+document.getElementById("sellForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    
+    const name = formData.get("name");
+    const price = parseFloat(formData.get("price"));
+    const category = formData.get("category");
+    const description = formData.get("description");
+    const imageFile = formData.get("image");
+
+    if (!imageFile || imageFile.size === 0) {
+        showNotification("Please select an image", "error");
+        return;
+    }
+
+    try {
+        // Upload image to Firebase Storage
+        const imageRef = storageRef(storage, `products/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(imageRef, imageFile);
+        const imageURL = await getDownloadURL(imageRef);
+
+        // Add product to Firestore
+        await addDoc(collection(db, "products"), {
+            name,
+            price,
+            category,
+            description,
+            imageURL,
+            uid: currentUser.uid,
+            sold: false,
+            createdAt: serverTimestamp()
+        });
+
+        form.reset();
+        showNotification("Product listed successfully!", "success");
+        showSection("myProducts");
+    } catch (error) {
+        console.error("Error listing product:", error);
+        showNotification("Error listing product", "error");
+    }
+});
+
+// Product modal functionality
+function showProductModal(product) {
+    selectedProductIdForModal = product.id;
+    document.getElementById("modalTitle").textContent = product.name;
+    document.getElementById("modalDescription").textContent = product.description;
+    document.getElementById("modalPrice").textContent = product.price.toFixed(2);
+    
+    const modalImage = document.getElementById("modalImage");
+    if (product.imageURL) {
+        modalImage.src = product.imageURL;
+        modalImage.style.display = "block";
+    } else {
+        modalImage.style.display = "none";
+    }
+    
+    document.getElementById("productModal").style.display = "flex";
+    loadComments(product.id);
+}
+
+function closeModal() {
+    document.getElementById("productModal").style.display = "none";
+    document.getElementById("modalComments").innerHTML = "";
+    selectedProductIdForModal = null;
+}
+
+// Load comments for a product
+async function loadComments(productId) {
+    try {
+        const commentsRef = collection(db, "products", productId, "comments");
+        const commentsQuery = query(commentsRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(commentsQuery);
+        
+        const container = document.getElementById("modalComments");
+        
+        if (snapshot.empty) {
+            container.innerHTML = "<p>No reviews yet.</p>";
+            return;
+        }
+
+        const commentsHTML = snapshot.docs.map(doc => {
+            const data = doc.data();
+            const stars = "⭐".repeat(data.rating) + "☆".repeat(5 - data.rating);
+            return `
+                <div style="border-bottom:1px solid #eee; padding:10px 0;">
+                    <strong>${data.name}</strong> • ${stars}
+                    <p>${data.text}</p>
+                </div>
+            `;
+        }).join("");
+
+        container.innerHTML = "<h3 style='margin-bottom:10px;'>Reviews:</h3>" + commentsHTML;
+    } catch (error) {
+        console.error("Error loading comments:", error);
+        document.getElementById("modalComments").innerHTML = "<p>Error loading reviews.</p>";
+    }
+}
+
+// Handle comment form submission
+document.getElementById("commentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
     const text = document.getElementById("commentText").value.trim();
     const rating = parseInt(document.getElementById("commentRating").value);
 
-    if (!text || !rating || !selectedProductIdForModal) return;
+    if (!text || !rating || !selectedProductIdForModal) {
+        showNotification("Please fill in all fields", "error");
+        return;
+    }
 
-    const name = currentUser.displayName || currentUser.email.split('@')[0];
-    const ref = collection(db, "products", selectedProductIdForModal, "comments");
-    await addDoc(ref, {
-        uid: currentUser.uid,
-        name,
-        rating,
-        text,
-        createdAt: serverTimestamp()
-    });
+    try {
+        const name = currentUser.displayName || currentUser.email.split('@')[0];
+        const commentsRef = collection(db, "products", selectedProductIdForModal, "comments");
+        
+        await addDoc(commentsRef, {
+            uid: currentUser.uid,
+            name,
+            rating,
+            text,
+            createdAt: serverTimestamp()
+        });
 
-    document.getElementById("commentText").value = "";
-    document.getElementById("commentRating").value = "";
-    loadComments(selectedProductIdForModal);
-    showNotification("Review added!", "success");
+        document.getElementById("commentText").value = "";
+        document.getElementById("commentRating").value = "";
+        loadComments(selectedProductIdForModal);
+        showNotification("Review added successfully!", "success");
+    } catch (error) {
+        console.error("Error adding comment:", error);
+        showNotification("Error adding review", "error");
+    }
 });
 
+// Update profile statistics
+function updateProfileStats() {
+    const userProducts = allProducts.filter(p => p.uid === currentUser.uid);
+    const soldItems = userProducts.filter(p => p.sold);
+    const totalListings = userProducts.length;
+    const totalEarnings = soldItems.reduce((sum, p) => sum + parseFloat(p.price), 0);
 
-// ... rest of your functions ...
+    document.getElementById("totalListings").textContent = totalListings;
+    document.getElementById("soldItems").textContent = soldItems.length;
+    document.getElementById("totalEarnings").textContent = `$${totalEarnings.toFixed(2)}`;
+}
 
+// Search functionality
+document.getElementById("searchInput").addEventListener("input", (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    // Filter products based on search term
+    // This is a simple implementation - you might want to enhance it
+    const filteredProducts = allProducts.filter(p =>
+        p.name.toLowerCase().includes(searchTerm) ||
+        p.description.toLowerCase().includes(searchTerm)
+    );
+    // Update display with filtered products
+    // You can enhance this based on your needs
+});
+
+// Create and add sort dropdown
+function createSortDropdown() {
+    const sortContainer = document.createElement("div");
+    sortContainer.style.marginBottom = "20px";
+    sortContainer.innerHTML = `
+        <label for="sortSelect" style="margin-right: 10px; color: white;">Sort by:</label>
+        <select id="sortSelect" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+            <option value="featured">Featured</option>
+            <option value="lowToHigh">Price: Low to High</option>
+            <option value="highToLow">Price: High to Low</option>
+            <option value="newest">Newest</option>
+        </select>
+    `;
+    
+    const productsGrid = document.getElementById("productsGrid");
+    productsGrid.parentNode.insertBefore(sortContainer, productsGrid);
+    
+    document.getElementById("sortSelect").addEventListener("change", (e) => {
+        currentSort = e.target.value;
+        renderProducts();
+    });
+}
+
+// Initialize sort dropdown when page loads
+document.addEventListener("DOMContentLoaded", () => {
+    createSortDropdown();
+});
+
+// Make functions globally available
 window.showSection = showSection;
 window.toggleCart = toggleCart;
 window.addToCart = addToCart;
@@ -1305,9 +1466,7 @@ window.deleteProduct = deleteProduct;
 window.markAsSold = markAsSold;
 window.filterProducts = filterProducts;
 window.showProductModal = showProductModal;
-window.closeModal = closeModal;
-
-
+window.closeModal = closeModal; 
 </script>
 
 </body>
